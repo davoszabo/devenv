@@ -1,0 +1,10 @@
+ARG VERSION=0.0.1
+FROM dev2dy/devenv:${VERSION}
+
+# Add wheel to sudoers list
+RUN echo "%wheel  ALL=(ALL)       NOPASSWD: ALL" >> /etc/sudoers
+
+COPY ./entrypoint.sh /
+RUN sudo chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]

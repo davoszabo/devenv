@@ -1,0 +1,26 @@
+services:
+  devenv:
+    image: dev2dy/devenv
+    container_name: dev-environment
+    hostname: devenv
+    build:
+      dockerfile: Dockerfile.user
+      context: .
+    user: ${UID}:${GID}
+    group_add:
+      - ${DOCKER_GID}
+      - ${WHEEL_GID}
+    working_dir: ${HOME}
+    # environment:
+      # DISPLAY: ${DISPLAY}
+    restart: unless-stopped
+    stdin_open: true    # docker run -i
+    tty: true           # docker run -t
+    volumes:
+      - ${HOME}:${HOME}
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # To be able to access host docker daemon from container
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro              # To be able to copy to clipboard
+      - /etc/group:/etc/group:ro                      # For correct handle of user and groups (only if "group_add" parameter used)
+      - /etc/passwd:/etc/passwd:ro                    # For correct handle of user and groups (only if "user" parameter used)
+      - /etc/shadow:/etc/shadow:ro                    # For sudo (only if "user" parameter used)
+

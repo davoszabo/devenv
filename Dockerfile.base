@@ -1,0 +1,66 @@
+# Set environment variables
+# ENV DEBIAN_FRONTEND=noninteractive
+
+# Default versions for tools (can be overridden with --build-arg)
+ARG DOCKER_VERSION="27.2.1"
+ARG NEOVIM_VERSION="0.10.1"
+ARG LAZYGIT_VERSION="0.44.0"
+ARG NODE_VERSION="22.8.0" # Used to install DEVCONTAINER-CLI
+
+
+# DEVCONTAINER-CLI
+# ====================
+FROM node:${NODE_VERSION} as devcontainercli-builder
+RUN npm install -g @devcontainers/cli
+
+# BASE IMAGE
+# ====================
+FROM ubuntu:24.04
+
+# Must be defined in every SCOPE that uses them
+ARG DOCKER_VERSION
+ARG NEOVIM_VERSION
+ARG LAZYGIT_VERSION
+
+# Install essential tools, Docker CLI, and other dependencies
+RUN apt-get update && apt-get install -y \
+    sudo \
+    curl \
+    wget \
+    git \
+    gcc \
+    bash \
+    tmux \
+    unzip \
+    net-tools \
+    iputils-ping \
+    busybox \
+    xclip \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Copy Docker CLI and Docker Compose plugin from docker:dind image
+COPY --from=docker:27.2.1-dind /usr/local/bin/docker /usr/local/bin/docker
+COPY --from=docker:27.2.1-dind /usr/local/libexec/docker/cli-plugins /usr/local/libexec/docker/cli-plugins
+
+# Create a symlink for docker-compose
+RUN ln -s /usr/local/libexec/docker/cli-plugins/docker-compose /usr/local/bin/docker-compose
+
+# Install LazyGit from GitHub
+RUN curl -Lo lazygit.tar.gz https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz \
+    && tar xf lazygit.tar.gz lazygit \
+    && mv lazygit /usr/local/bin/ \
+    && rm lazygit.tar.gz
+
+# Install Neovim from GitHub
+RUN curl -Lo nvim.appimage https://github.com/neovim/neovim/releases/download/v${NEOVIM_VERSION}/nvim.appimage \
+    && chmod +x nvim.appimage \
+    && ./nvim.appimage --appimage-extract \
+    && mv squashfs-root /usr/local/nvim \
+    && ln -s /usr/local/nvim/AppRun /usr/local/bin/nvim \
+    && rm -f nvim.appimage
+
+# Copy devcontainer-cli binaries
+COPY --from=devcontainercli-builder /usr/local/bin/node /usr/local/bin/node
+COPY --from=devcontainercli-builder /usr/local/lib/node_modules/@devcontainers /usr/local/lib/devcontainer
+RUN ln -s /usr/local/lib/devcontainer/cli/devcontainer.js /usr/local/bin/devcontainer
+
