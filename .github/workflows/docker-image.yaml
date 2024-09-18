@@ -30,6 +30,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: Dockerfile.base
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/devenv:${{ github.ref_name }},${{ secrets.DOCKERHUB_USERNAME }}/devenv:latest
 
