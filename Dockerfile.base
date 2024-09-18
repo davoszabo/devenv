@@ -8,6 +8,10 @@ ARG LAZYGIT_VERSION="0.44.0"
 ARG NODE_VERSION="22.8.0" # Used to install DEVCONTAINER-CLI
 
 
+# DOCKER
+# ====================
+FROM docker:${DOCKER_VERSION}-dind as docker-builder
+
 # DEVCONTAINER-CLI
 # ====================
 FROM node:${NODE_VERSION} as devcontainercli-builder
@@ -39,8 +43,8 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy Docker CLI and Docker Compose plugin from docker:dind image
-COPY --from=docker:27.2.1-dind /usr/local/bin/docker /usr/local/bin/docker
-COPY --from=docker:27.2.1-dind /usr/local/libexec/docker/cli-plugins /usr/local/libexec/docker/cli-plugins
+COPY --from=docker-builder /usr/local/bin/docker /usr/local/bin/docker
+COPY --from=docker-builder /usr/local/libexec/docker/cli-plugins /usr/local/libexec/docker/cli-plugins
 
 # Create a symlink for docker-compose
 RUN ln -s /usr/local/libexec/docker/cli-plugins/docker-compose /usr/local/bin/docker-compose

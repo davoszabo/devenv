@@ -1,4 +1,4 @@
-ARG VERSION=0.0.1
+ARG VERSION=latest
 FROM dev2dy/devenv:${VERSION}
 
 # Add wheel to sudoers list
