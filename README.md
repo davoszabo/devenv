@@ -4,6 +4,7 @@ Containerized development environment, which contains:
 - neovim
 - lazygit
 - devcontainer-cli 
+- k9s for kubernetes
 
 ... and more.
 
