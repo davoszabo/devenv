@@ -65,6 +65,17 @@ RUN curl -Lo nvim.appimage https://github.com/neovim/neovim/releases/download/v$
     && ln -s /usr/local/nvim/AppRun /usr/local/bin/nvim \
     && rm -f nvim.appimage
 
+# Install kubectl
+RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" \
+    && chmod +x kubectl \
+    && mv kubectl /usr/local/bin/
+
+# Install helm
+RUN curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 \
+    && chmod 700 get_helm.sh \
+    && ./get_helm.sh \
+    && rm -rf get_helm.sh
+
 # Install K9S
 RUN wget https://github.com/derailed/k9s/releases/download/v${K9S_VERSION}/k9s_linux_amd64.deb \
     && apt install ./k9s_linux_amd64.deb \
