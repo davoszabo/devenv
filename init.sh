@@ -9,5 +9,5 @@ export WHEEL_GID=$(getent group wheel | cut -d: -f3)    # Gain root privilages
 # Change to the parent directory of /scripts
 #cd "$(dirname "$0")/.."
 
-docker compose up -d --build
+docker compose --progress=plain up -d --build
 

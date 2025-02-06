@@ -6,21 +6,31 @@ services:
     build:
       dockerfile: Dockerfile.user
       context: .
+      args:
+        SESSION_TYPE: ${XDG_SESSION_TYPE}
     user: ${UID}:${GID}
     group_add:
       - ${DOCKER_GID}
       - ${WHEEL_GID}
     working_dir: ${HOME}
-    # environment:
+    environment:
+      ## For X11
       # DISPLAY: ${DISPLAY}
+      ## For WAYLAND
+      WAYLAND_DISPLAY: ${WAYLAND_DISPLAY}
+      XDG_RUNTIME_DIR: /tmp/xdg-runtime-dir
     restart: unless-stopped
     stdin_open: true    # docker run -i
     tty: true           # docker run -t
     volumes:
       - ${HOME}:${HOME}
-      - /var/run/docker.sock:/var/run/docker.sock:ro  # To be able to access host docker daemon from container
-      - /tmp/.X11-unix:/tmp/.X11-unix:ro              # To be able to copy to clipboard
       - /etc/group:/etc/group:ro                      # For correct handle of user and groups (only if "group_add" parameter used)
       - /etc/passwd:/etc/passwd:ro                    # For correct handle of user and groups (only if "user" parameter used)
       - /etc/shadow:/etc/shadow:ro                    # For sudo (only if "user" parameter used)
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # To be able to access host docker daemon from container
+      ### To be able to copy to clipboard
+      ## For X11
+      # - /tmp/.X11-unix:/tmp/.X11-unix:ro
+      ## For WAYLAND
+      - /run/user/${UID}/${WAYLAND_DISPLAY}:/tmp/xdg-runtime-dir/${WAYLAND_DISPLAY}:ro  # Wayland socket sharing
 
