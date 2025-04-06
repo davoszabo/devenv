@@ -4,20 +4,6 @@ FROM dev2dy/devenv:${VERSION}
 # Add wheel to sudoers list
 RUN echo "%wheel  ALL=(ALL)       NOPASSWD: ALL" >> /etc/sudoers
 
-# Install clipboard tools based on XDG_SESSION_TYPE
-ARG SESSION_TYPE
-RUN if [ "$SESSION_TYPE" = "x11" ]; then \
-      echo "Detected X11 session. Installing xclip..." && \
-      sudo apt-get update && sudo apt-get install -y --no-install-recommends xclip; \
-    elif [ "$SESSION_TYPE" = "wayland" ]; then \
-      echo "Detected Wayland session. Installing wl-clipboard..." && \
-      sudo apt-get update && sudo apt-get install -y --no-install-recommends wl-clipboard || \
-      (echo "WARNING: wl-clipboard installation failed. Ensure the 'messagebus' group exists on the host." && exit 1); \
-    else \
-      echo "Unknown session type or no display environment detected. Skipping clipboard installation."; \
-    fi && \
-    rm -rf /var/lib/apt/lists/*
-
 COPY ./entrypoint.sh /
 RUN sudo chmod +x /entrypoint.sh
 

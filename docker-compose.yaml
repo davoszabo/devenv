@@ -7,7 +7,6 @@ services:
       dockerfile: Dockerfile.user
       context: .
       args:
-        SESSION_TYPE: ${XDG_SESSION_TYPE}
         VERSION: latest
     user: ${UID}:${GID}
     group_add:
@@ -18,7 +17,7 @@ services:
       ## For X11
       # DISPLAY: ${DISPLAY}
       ## For WAYLAND
-      WAYLAND_DISPLAY: ${WAYLAND_DISPLAY}
+      WAYLAND_DISPLAY: wayland-0
       XDG_RUNTIME_DIR: /tmp/xdg-runtime-dir
     restart: unless-stopped
     stdin_open: true    # docker run -i
@@ -33,5 +32,5 @@ services:
       ## For X11
       # - /tmp/.X11-unix:/tmp/.X11-unix:ro
       ## For WAYLAND
-      - /run/user/${UID}/${WAYLAND_DISPLAY}:/tmp/xdg-runtime-dir/${WAYLAND_DISPLAY}:ro  # Wayland socket sharing
+      - /run/user/${UID}/${WAYLAND_DISPLAY}:/tmp/xdg-runtime-dir/wayland-0:ro  # Wayland socket sharing
 

@@ -26,6 +26,13 @@ sudo groupadd -g 101 messagebus
 sudo useradd -r -K SYS_UID_MIN=100 -K SYS_UID_MAX=999 -d /nonexistent -g messagebus -s /usr/sbin/nologin -u 100 messagebus
 ```
 
+To be able to use clipboard functionality with SSH + Wayland:
+```
+waypipe -n ssh <host>
+```
+
+The `-n` flag disables GPU acceleration which needed in this scenario!
+
 ## Usage
 Please use the `./init.sh` script that collects the required user and group IDs and initiate the container creation. The compose file will mount the user /home directory. This helps you utilize your configurations to keep it on the host, but also use it inside the container, so there is not need to COPY the configs each time to the container. Users and groups are also mounted in read-only mode to ensure proper permissions.
 
