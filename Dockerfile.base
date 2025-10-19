@@ -2,19 +2,19 @@
 # ENV DEBIAN_FRONTEND=noninteractive
 
 # Default versions for tools (can be overridden with --build-arg)
-ARG DOCKER_VERSION="27.2.1"
-ARG NEOVIM_VERSION="0.10.1"
-ARG LAZYGIT_VERSION="0.44.0"
-ARG NODE_VERSION="22.8.0" # Used to install DEVCONTAINER-CLI
-ARG K9S_VERSION="0.32.7"
+ARG DOCKER_VERSION="28.5.1"
+ARG NEOVIM_VERSION="0.11.4"
+ARG LAZYGIT_VERSION="0.55.1"
+ARG K9S_VERSION="0.50.16"
+ARG NODE_VERSION="25.0.0" # Used to install DEVCONTAINER-CLI
 
 # DOCKER
 # ====================
-FROM docker:${DOCKER_VERSION}-dind as docker-builder
+FROM docker:${DOCKER_VERSION}-dind AS docker-builder
 
 # DEVCONTAINER-CLI
 # ====================
-FROM node:${NODE_VERSION} as devcontainercli-builder
+FROM node:${NODE_VERSION} AS devcontainercli-builder
 RUN npm install -g @devcontainers/cli
 
 # BASE IMAGE
@@ -60,7 +60,7 @@ RUN curl -Lo lazygit.tar.gz https://github.com/jesseduffield/lazygit/releases/do
     && rm lazygit.tar.gz
 
 # Install Neovim from GitHub
-RUN curl -Lo nvim.appimage https://github.com/neovim/neovim/releases/download/v${NEOVIM_VERSION}/nvim.appimage \
+RUN curl -Lo nvim.appimage https://github.com/neovim/neovim/releases/download/v${NEOVIM_VERSION}/nvim-linux-x86_64.appimage  \
     && chmod +x nvim.appimage \
     && ./nvim.appimage --appimage-extract \
     && mv squashfs-root /usr/local/nvim \
