@@ -38,17 +38,17 @@ Please use the `./init.sh` script that collects the required user and group IDs 
 
 Exec into container:
 ```
-docker exec -it dev-environment bash
+docker exec -it devenv bash
 ```
 
 You can also use another command to start an interactive shell on the container like `tmux`:
 ```
-docker exec -it dev-environment tmux -u2 new -A
+docker exec -it devenv tmux -u2 new -A
 ```
 
 Stop container (won't remove)
 ```
-docker stop dev-environment
+docker stop devenv
 ```
 
 Kill container (will remove)

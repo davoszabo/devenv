@@ -1,7 +1,7 @@
 services:
   devenv:
-    image: dev2dy/devenv
-    container_name: dev-environment
+    image: dev2dy/devenv:${DEVENV_VERSION}
+    container_name: devenv
     hostname: devenv
     build:
       dockerfile: Dockerfile.user
