@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile.user
       context: .
       args:
-        VERSION: latest
+        VERSION: ${DEVENV_VERSION}
     user: ${UID}:${GID}
     group_add:
       - ${DOCKER_GID}

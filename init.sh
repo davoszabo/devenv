@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export DEVENV_VERSION="latest"
+
 # export USER="$(id -un)"
 export UID="$(id -u)"
 export GID="$(id -g)"
