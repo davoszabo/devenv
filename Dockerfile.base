@@ -44,6 +44,8 @@ RUN apt-get update && apt-get install -y \
     fzf \
     xclip \
     wl-clipboard \
+    colordiff \
+    telnet \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy Docker CLI and Docker Compose plugin from docker:dind image
