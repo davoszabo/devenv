@@ -1,0 +1,121 @@
+# Fedora 43 toolbox image: CLI dev tools, Podman, devcontainer-cli, and toolbox shell hooks.
+# Build: see scripts/toolbox-create-devenv.sh and README.md.
+
+ARG NEOVIM_VERSION="0.11.4"
+ARG LAZYGIT_VERSION="0.55.1"
+ARG K9S_VERSION="0.50.16"
+ARG NODE_VERSION="25.0.0"
+
+# Stage: install @devcontainers/cli with npm (payload copied into final image below).
+FROM docker.io/library/node:${NODE_VERSION} AS devcontainercli-builder
+RUN npm install -g @devcontainers/cli
+
+FROM registry.fedoraproject.org/fedora:43
+
+ARG NEOVIM_VERSION
+ARG LAZYGIT_VERSION
+ARG K9S_VERSION
+ARG NODE_VERSION
+
+# OS packages: editors/cli utilities; bind-utils for dig/nslookup; iputils for ping.
+# podman + podman-docker: Docker-compatible CLI for devcontainer-cli; podman-compose for compose-style workflows.
+RUN dnf -y update && dnf -y install \
+    sudo \
+    curl \
+    wget \
+    git \
+    gcc \
+    bash \
+    tmux \
+    unzip \
+    net-tools \
+    iputils \
+    busybox \
+    ripgrep \
+    tree-sitter-cli \
+    fd \
+    fzf \
+    xclip \
+    wl-clipboard \
+    colordiff \
+    telnet \
+    bind-utils \
+    openssl \
+    tar \
+    libatomic \
+    podman \
+    podman-docker \
+    podman-compose \
+    && dnf clean all
+
+# Passwordless sudo for wheel (toolbox usually adds you to wheel; adjust if your image differs)
+RUN echo '%wheel ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/wheel-nopasswd \
+    && chmod 440 /etc/sudoers.d/wheel-nopasswd
+
+# Large downloads: --retry* helps when CDNs reset mid-transfer (curl 56).
+# LazyGit (upstream release tarball)
+RUN curl -fL --connect-timeout 30 --retry 5 --retry-delay 3 --retry-all-errors \
+        -o lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" \
+    && tar xf lazygit.tar.gz lazygit \
+    && mv lazygit /usr/local/bin/ \
+    && rm lazygit.tar.gz
+
+# Neovim: official AppImage, extracted to /usr/local/nvim
+RUN curl -fL --connect-timeout 30 --retry 5 --retry-delay 3 --retry-all-errors \
+        -o nvim.appimage "https://github.com/neovim/neovim/releases/download/v${NEOVIM_VERSION}/nvim-linux-x86_64.appimage" \
+    && chmod +x nvim.appimage \
+    && ./nvim.appimage --appimage-extract \
+    && mv squashfs-root /usr/local/nvim \
+    && ln -sf /usr/local/nvim/AppRun /usr/local/bin/nvim \
+    && rm -f nvim.appimage
+
+# kubectl (stable channel from dl.k8s.io)
+RUN k8s_ver="$(curl -fsSL --connect-timeout 30 --retry 5 --retry-delay 3 --retry-all-errors \
+        https://dl.k8s.io/release/stable.txt | tr -d '\r\n')" \
+    && curl -fL --connect-timeout 30 --retry 5 --retry-delay 3 --retry-all-errors \
+        -o /usr/local/bin/kubectl \
+        "https://dl.k8s.io/release/${k8s_ver}/bin/linux/amd64/kubectl" \
+    && chmod +x /usr/local/bin/kubectl
+
+# kubectx / kubens
+RUN git clone --depth 1 https://github.com/ahmetb/kubectx /opt/kubectx \
+    && ln -sf /opt/kubectx/kubectx /usr/local/bin/kubectx \
+    && ln -sf /opt/kubectx/kubens /usr/local/bin/kubens
+
+# Helm (upstream get-helm-3 script)
+RUN curl -fsSL --connect-timeout 30 --retry 5 --retry-delay 3 --retry-all-errors \
+        -o /tmp/get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 \
+    && chmod 700 /tmp/get_helm.sh \
+    && /tmp/get_helm.sh \
+    && rm -f /tmp/get_helm.sh
+
+# K9s (upstream Linux amd64 tarball)
+RUN curl -fL --connect-timeout 30 --retry 5 --retry-delay 3 --retry-all-errors \
+        -o /tmp/k9s.tar.gz "https://github.com/derailed/k9s/releases/download/v${K9S_VERSION}/k9s_Linux_amd64.tar.gz" \
+    && tar -xzf /tmp/k9s.tar.gz -C /tmp \
+    && mv /tmp/k9s /usr/local/bin/k9s \
+    && chmod +x /usr/local/bin/k9s \
+    && rm -f /tmp/k9s.tar.gz
+
+# devcontainer-cli: copy npm global from the node stage; install Node runtime from the official
+# Linux x64 tarball (matches NODE_VERSION, glibc-friendly on Fedora — avoid copying node binary from the node image stage).
+RUN curl -fsSL --connect-timeout 30 --retry 5 --retry-delay 3 --retry-all-errors \
+        "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" \
+    | tar -xJ --strip-components=1 -C /usr/local
+COPY --from=devcontainercli-builder /usr/local/lib/node_modules/@devcontainers /usr/local/lib/devcontainer
+RUN ln -sf /usr/local/lib/devcontainer/cli/devcontainer.js /usr/local/bin/devcontainer \
+    && npm install -g tree-sitter-cli@0.26.1
+
+# Toolbox hooks: DOCKER_HOST/CONTAINER_HOST sync + tmux auto-attach (see scripts/devenv-toolbox.sh).
+COPY scripts/devenv-toolbox.sh /usr/local/libexec/devenv-toolbox.sh
+COPY scripts/devenv-toolbox.sh /etc/profile.d/z99-devenv-toolbox.sh
+RUN chmod 755 /usr/local/libexec/devenv-toolbox.sh \
+    && chmod 644 /etc/profile.d/z99-devenv-toolbox.sh \
+    && cat >> /etc/bashrc <<'EOF'
+
+# devenv toolbox: DOCKER_HOST/CONTAINER_HOST sync + tmux auto-attach
+[ -r /usr/local/libexec/devenv-toolbox.sh ] && . /usr/local/libexec/devenv-toolbox.sh
+
+EOF
+
+WORKDIR /root
