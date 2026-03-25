@@ -1,58 +1,34 @@
 # Overview
-Containerized development environment, which contains: 
-- tmux
-- neovim
-- lazygit
-- devcontainer-cli 
-- kubectl, helm and k9s for kubernetes
+Fedora **Toolbox** development environment built with **Podman**.
 
-... and more.
+This repo is intentionally minimal and only documents the files that exist here:
 
-## About
-The base Dockerfile is responsible for creating the base that consists of the needed tools. On the other hand the user Dockerfile is dynamically creating a user specific environment based on the IDs of the user.
+- `Containerfile.fedora`: builds the toolbox image (tools + devcontainer CLI)
+- `scripts/devenv-toolbox.sh`: sourced on shell startup; mirrors `DOCKER_HOST`/`CONTAINER_HOST` when only one is set, then auto-attaches to tmux (TPM bootstrap)
+- `toolbox-init.sh`: helper to `podman build` + `toolbox create`
 
-## Prerequisites
-There might be some manual steps to follow regarding your needs.
+## Build + create toolbox
 
-### Clipboard support
-- xclip (X11)
-- wl-clipboard (Wayland)
-
-Edit the `docker-compose.yaml` file and uncomment the lines regarding the environment you want to use.
-
-**wl-clipboard** will need the `messagbus` user and group, that you might need to set up manually:
+Use the custom init script:
 ```
-sudo groupadd -g 101 messagebus
-sudo useradd -r -K SYS_UID_MIN=100 -K SYS_UID_MAX=999 -d /nonexistent -g messagebus -s /usr/sbin/nologin -u 100 messagebus
+./scripts/toolbox-create-devenv.sh --recreate
+toolbox enter devenv
 ```
 
-To be able to use clipboard functionality with SSH + Wayland:
+or build and start it manually:
 ```
-waypipe -n ssh <host>
+# Build a new one if necessary
+podman build -f Containerfile.fedora -t <tag> <repo_root>
+
+# Recreate if needed
+toolbox rm -f devenv
+
+toolbox create --image dev2dy/devenv:latest devenv
 ```
 
-The `-n` flag disables GPU acceleration which needed in this scenario!
+## Runtime behavior
 
-## Usage
-Please use the `./init.sh` script that collects the required user and group IDs and initiate the container creation. The compose file will mount the user /home directory. This helps you utilize your configurations to keep it on the host, but also use it inside the container, so there is not need to COPY the configs each time to the container. Users and groups are also mounted in read-only mode to ensure proper permissions.
-
-Exec into container:
-```
-docker exec -it devenv bash
-```
-
-You can also use another command to start an interactive shell on the container like `tmux`:
-```
-docker exec -it devenv tmux -u2 new -A
-```
-
-Stop container (won't remove)
-```
-docker stop devenv
-```
-
-Kill container (will remove)
-```
-docker compose down
-```
+- **tmux on startup**: entering the toolbox with an interactive bash will `exec tmux -u2 new -A -s devenv` unless `DEVENV_NO_TMUX=1` is set. TPM is cloned and `install_plugins.sh` is run if present.
+- **Podman / devcontainer env**: ensure `DOCKER_HOST` is set for the toolbox (usually inherited from the host/session). The image hook copies it to `CONTAINER_HOST` (and the reverse if needed) so Podman and devcontainer-cli agree without extra host dotfiles.
+- **devcontainer-cli**: `devcontainer` is installed in the image and uses the `docker` CLI (provided by `podman-docker`) to talk to Podman.
 

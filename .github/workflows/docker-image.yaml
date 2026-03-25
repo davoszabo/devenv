@@ -25,12 +25,12 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Build the Docker image from Dockerfile.base
+      # Build and push the Fedora toolbox image from Containerfile.fedora
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile.base
+          file: Containerfile.fedora
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/devenv:${{ github.ref_name }},${{ secrets.DOCKERHUB_USERNAME }}/devenv:latest
 
