@@ -103,8 +103,7 @@ RUN curl -fsSL --connect-timeout 30 --retry 5 --retry-delay 3 --retry-all-errors
         "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" \
     | tar -xJ --strip-components=1 -C /usr/local
 COPY --from=devcontainercli-builder /usr/local/lib/node_modules/@devcontainers /usr/local/lib/devcontainer
-RUN ln -sf /usr/local/lib/devcontainer/cli/devcontainer.js /usr/local/bin/devcontainer \
-    && npm install -g tree-sitter-cli@0.26.1
+RUN ln -sf /usr/local/lib/devcontainer/cli/devcontainer.js /usr/local/bin/devcontainer
 
 # Toolbox hooks: DOCKER_HOST/CONTAINER_HOST sync + tmux auto-attach (see scripts/devenv-toolbox.sh).
 COPY scripts/devenv-toolbox.sh /usr/local/libexec/devenv-toolbox.sh
