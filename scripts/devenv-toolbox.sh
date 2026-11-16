@@ -34,7 +34,7 @@ devenv__tmux_auto_enter() {
     "${HOME}/.tmux/plugins/tpm/scripts/install_plugins.sh" >/dev/null 2>&1 || true
   fi
 
-  exec tmux -u2 new -A -s devenv
+  exec tmux -u2 new -A
 }
 
 devenv__sync_container_docker_host
