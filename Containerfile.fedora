@@ -127,6 +127,8 @@ EOF
 # Clipboard: wl-copy -> xclip shim (wl-clipboard cannot reach KWin's ext-data-control; see script header).
 # Audio: pipewire-utils (pw-play) is installed above so herdr notification sounds reach the host PipeWire socket.
 COPY scripts/wl-copy-shim.sh /usr/local/bin/wl-copy
-RUN chmod 755 /usr/local/bin/wl-copy
+# Clipboard images: xclip returns stale X11 text for image/png (exit 0); route those reads to wl-paste.
+COPY scripts/xclip-wrapper.sh /usr/local/bin/xclip
+RUN chmod 755 /usr/local/bin/wl-copy /usr/local/bin/xclip
 
 WORKDIR /root
